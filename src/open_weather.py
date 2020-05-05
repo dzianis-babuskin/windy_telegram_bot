@@ -1,7 +1,7 @@
 import requests
 
-from const import API_KEY, UNITS
-from geo import get_location_by_city_name
+from src.const import API_KEY, UNITS
+from src.geo import get_location_by_city_name
 
 
 def get_current_weather_by_name(city_name:str):

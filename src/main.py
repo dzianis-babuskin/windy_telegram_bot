@@ -2,8 +2,8 @@ import datetime
 
 from telegram.ext import Updater, CommandHandler
 
-from const import BOT_TOKEN
-from open_weather import get_hourly_weather_by_name
+from src.const import BOT_TOKEN
+from src.open_weather import get_hourly_weather_by_name
 
 
 def start(update, context):
