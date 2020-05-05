@@ -1,48 +1,43 @@
-import requests
-from pprint import pprint
+import datetime
+
 from telegram.ext import Updater, CommandHandler
-from telegram import InlineKeyboardButton, KeyboardButton, InlineKeyboardMarkup
-import telegram
 
+from const import BOT_TOKEN
+from open_weather import get_hourly_weather_by_name
 
-#todo: delete all sensitive data before pushing into repository
-BOT_TOKEN = 'YOUR TOKEN'
-UNITS = 'metric'
-API_KEY = 'YOUR API KEY'
-
-
-def get_current_weather_by_name(city_name:str):
-    api_call = f'https://api.openweathermap.org/data/2.5/weather?q={city_name}&appid={API_KEY}&units={UNITS}'
-    return requests.get(api_call).json()
-
-def get_current_weather_by_geo(lat:int, lon:int):
-    api_call = f'https://api.openweathermap.org/data/2.5/forecast/weather?lat={lat}&lon={lon}&appid={API_KEY}&units={UNITS}'
-    return requests.get(api_call).json()
 
 def start(update, context):
-    some_strings = ["col1", "col2", "row2"]
-    button_list = [[KeyboardButton(s)] for s in some_strings]
-    # context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
-    reply_markup = InlineKeyboardMarkup(build_menu(button_list, n_cols=2))
-    context.bot.send_message(chat_id=update.effective_chat.id, reply_markup=reply_markup)
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm a bot, please talk to me!")
 
-def build_menu(buttons,
-               n_cols,
-               header_buttons=None,
-               footer_buttons=None):
-    menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
-    if header_buttons:
-        menu.insert(0, [header_buttons])
-    if footer_buttons:
-        menu.append([footer_buttons])
-    return menu
+def help(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Send '/wind' to bot to know the wind speed for upcoming hours")
+
+def wind(update, context, city_name='Minsk'):
+    weather_json = get_hourly_weather_by_name(city_name)
+    weather_string = 'Remind you that Mavic mini max wind resistance is 8 m/s\n'
+    for weather in weather_json:
+        weather_string += f'Wind speed at {time(get_timestamp_from_json(weather))} - {get_wind_speed_from_json(weather):.1f} m/s'
+        weather_string += '\n'
+    context.bot.send_message(chat_id=update.effective_chat.id, text=weather_string)
 
 def main():
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CommandHandler('help', help))
+    dp.add_handler(CommandHandler('wind', wind))
     updater.start_polling()
     updater.idle()
+
+def get_wind_speed_from_json(weather:dict) -> float:
+    return weather['wind_speed']
+
+def get_timestamp_from_json(weather:dict) -> int:
+    return weather['dt'] + 3600 * 3 #Local timezone is +3
+
+def time(timestamp:int):
+    return datetime.datetime.utcfromtimestamp(timestamp).strftime('%H:%M')
+
 
 if __name__ == '__main__':
     main()
